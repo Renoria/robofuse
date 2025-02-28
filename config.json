@@ -1,7 +1,7 @@
 {
     "token": "YOUR_RD_API_TOKEN",
-    "output_dir": "./Library",
-    "cache_dir": "./cache",
+    "output_dir": "./output2",
+    "cache_dir": "./cache2",
     "concurrent_requests": 32,
     "general_rate_limit": 60,
     "torrents_rate_limit": 25,
@@ -9,4 +9,4 @@
     "watch_mode_refresh_interval": 10,
     "watch_mode_health_check_interval": 60,
     "repair_torrents_enabled": true
-} 
+}
