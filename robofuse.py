@@ -759,9 +759,21 @@ def check_if_link_expired(generated_date_str=None, cached_date_str=None):
 
 def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_dir=None):
     """Process a single torrent, considering downloads list and link expiration."""
+    # Ensure we're working with a dictionary
+    if not isinstance(torrent, dict):
+        ui_utils.error(f"Torrent is not a dictionary but {type(torrent)}")
+        return []
+        
     torrent_id = torrent.get("id")
     torrent_filename = torrent.get("filename", f"torrent_{torrent_id}")
     torrent_links = torrent.get("links", [])
+    
+    # Check if links is a string and convert to list if needed
+    if isinstance(torrent_links, str):
+        ui_utils.warning(f"Torrent {torrent_id} has a string for links instead of a list. Converting.")
+        torrent_links = [torrent_links]
+        # Also update the torrent dictionary
+        torrent["links"] = torrent_links
     
     # Skip torrents without the "downloaded" status or links
     if torrent.get("status") != "downloaded":
@@ -780,10 +792,20 @@ def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_di
     if cache_dir and is_cached(torrent_id, cache_dir):
         cached_data = get_from_cache(torrent_id, cache_dir)
         
+    # Ensure downloads_dict is a dictionary
+    if not isinstance(downloads_dict, dict):
+        ui_utils.warning(f"downloads_dict is not a dictionary but {type(downloads_dict)}. Using empty dict.")
+        downloads_dict = {}
+        
     # Create a reverse lookup from links to download objects
     # For each link, keep the most recent valid download
     link_to_download = {}
     for download_id, download in downloads_dict.items():
+        # Ensure download is a dictionary
+        if not isinstance(download, dict):
+            ui_utils.warning(f"Skipping non-dict download: {type(download)}")
+            continue
+            
         if 'link' in download:
             link = download['link']
             
@@ -797,8 +819,8 @@ def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_di
                     new_date = datetime.fromisoformat(download['generated'].replace('Z', '+00:00'))
                     
                     if new_date > current_date:
-                        if ui_utils.verbose:
-                            print(f"Found newer download for link {link} ({new_date} vs {current_date})")
+                        # Use debug log level for "Found newer download" messages
+                        ui_utils.debug(f"Found newer download for link {link} ({new_date} vs {current_date})")
                         link_to_download[link] = download
                 except ValueError:
                     # If date parsing fails, keep the current one
@@ -807,6 +829,11 @@ def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_di
     # Check if any torrent links already exist in downloads list
     existing_downloads = []
     for rd_link in torrent_links:
+        # Skip if not a string
+        if not isinstance(rd_link, str):
+            ui_utils.warning(f"Skipping non-string link: {type(rd_link)}")
+            continue
+        
         # Use the full link to look up in our map
         if rd_link in link_to_download:
             existing_downloads.append(link_to_download[rd_link])
@@ -999,8 +1026,41 @@ def process_torrents_concurrent(client, torrents, output_dir, cache_dir=None, do
     if downloads is None:
         downloads = client.get_all_downloads_concurrent()
     
+    # Add debug info for downloads parameter
+    if isinstance(downloads, list):
+        ui_utils.info(f"Downloads is a list with {len(downloads)} items")
+        if downloads and len(downloads) > 0:
+            first_download = downloads[0]
+            ui_utils.info(f"First download type: {type(first_download)}")
+            if isinstance(first_download, dict):
+                ui_utils.info(f"First download keys: {', '.join(first_download.keys())}")
+    elif isinstance(downloads, dict):
+        ui_utils.info(f"Downloads is a dictionary with {len(downloads)} keys")
+        # Convert the dictionary to a list for backward compatibility
+        try:
+            downloads = list(downloads.values())
+            ui_utils.info(f"Converted dictionary to list with {len(downloads)} items")
+        except Exception as e:
+            ui_utils.error(f"Failed to convert dictionary to list: {e}")
+            downloads = []
+    elif isinstance(downloads, str):
+        ui_utils.info(f"WARNING: Downloads is a string: {downloads[:50]}...")
+        downloads = []
+    else:
+        ui_utils.info(f"Downloads is of type: {type(downloads)}")
+    
+    # Ensure downloads is a list
+    if not isinstance(downloads, list):
+        ui_utils.error(f"Downloads parameter is not a list! Using empty list instead.")
+        downloads = []
+    
     downloads_dict = {}
     for download in downloads:
+        # Ensure download is a dict before processing
+        if not isinstance(download, dict):
+            ui_utils.error(f"Found download that is not a dictionary: {type(download)}")
+            continue
+            
         # Use the ID as the key for quick lookup
         download_id = download.get('id')
         if download_id:
@@ -1015,6 +1075,11 @@ def process_torrents_concurrent(client, torrents, output_dir, cache_dir=None, do
     
     # Pre-categorize torrents for better thread allocation
     for torrent in torrents:
+        # Ensure torrent is a dict
+        if not isinstance(torrent, dict):
+            ui_utils.error(f"Found torrent that is not a dictionary: {type(torrent)}")
+            continue
+            
         if torrent.get('status') != 'downloaded':
             continue
             
@@ -1411,6 +1476,7 @@ def watch_mode(client, output_dir, cache_dir, config):
     # Keep track of processed torrents and downloads
     processed_torrent_ids = set()
     known_downloads = {}
+    downloads_list = []  # Keep a reference to the original list for passing to process_torrents_concurrent
     
     # Track time for periodic health checks
     last_health_check_time = time.time()
@@ -1433,11 +1499,14 @@ def watch_mode(client, output_dir, cache_dir, config):
                     
                     # Refresh all downloads
                     ui_utils.info("Refreshing all downloads...")
-                    downloads = client.get_all_downloads_concurrent()
+                    downloads_list = client.get_all_downloads_concurrent()
                     
                     # Update known downloads dictionary
                     known_downloads = {}
-                    for download in downloads:
+                    for download in downloads_list:
+                        if not isinstance(download, dict):
+                            ui_utils.warning(f"Skipping non-dict download: {type(download)}")
+                            continue
                         download_id = download.get('id')
                         if download_id:
                             known_downloads[download_id] = download
@@ -1447,7 +1516,7 @@ def watch_mode(client, output_dir, cache_dir, config):
                     torrents = client.get_all_torrents_concurrent()
                     
                     # Filter for only downloaded torrents
-                    downloaded_torrents = [t for t in torrents if t.get('status') == 'downloaded']
+                    downloaded_torrents = [t for t in torrents if isinstance(t, dict) and t.get('status') == 'downloaded']
                     
                     # Process torrents with health check
                     results = process_torrents_concurrent(
@@ -1455,13 +1524,13 @@ def watch_mode(client, output_dir, cache_dir, config):
                         downloaded_torrents, 
                         output_dir, 
                         cache_dir,
-                        downloads,
+                        downloads_list,  # Pass the original list
                         skip_health_check=not repair_torrents  # Skip health check if repair is disabled
                     )
                     
                     # Update processed torrent IDs
                     for torrent in downloaded_torrents:
-                        if torrent.get('id'):
+                        if isinstance(torrent, dict) and torrent.get('id'):
                             processed_torrent_ids.add(torrent.get('id'))
                             
                     # Report statistics
@@ -1479,11 +1548,44 @@ def watch_mode(client, output_dir, cache_dir, config):
                     
                     # Find new torrents that haven't been processed yet
                     new_torrents = [t for t in torrents 
-                                  if t.get('status') == 'downloaded' 
+                                  if isinstance(t, dict)
+                                  and t.get('status') == 'downloaded' 
                                   and t.get('id') not in processed_torrent_ids]
                     
                     if new_torrents:
                         ui_utils.info(f"Found {len(new_torrents)} new torrents to process.")
+                        
+                        # Debug info for each new torrent
+                        for i, torrent in enumerate(new_torrents):
+                            ui_utils.info(f"Debug - New torrent {i+1}:")
+                            ui_utils.info(f"  ID: {torrent.get('id')}")
+                            ui_utils.info(f"  Filename: {torrent.get('filename')}")
+                            ui_utils.info(f"  Status: {torrent.get('status')}")
+                            ui_utils.info(f"  Links type: {type(torrent.get('links', []))}")
+                            
+                            # Print links (safely)
+                            links = torrent.get('links', [])
+                            if isinstance(links, list):
+                                ui_utils.info(f"  Links count: {len(links)}")
+                                for j, link in enumerate(links[:3]):  # Show first 3 links max
+                                    ui_utils.info(f"    Link {j+1}: {link} (type: {type(link)})")
+                            elif isinstance(links, str):
+                                ui_utils.info(f"  Links (string): {links}")
+                            else:
+                                ui_utils.info(f"  Links: {links}")
+                        
+                        # Get fresh downloads if we haven't done so recently
+                        if current_time - last_health_check_time > 300:  # 5 minutes
+                            ui_utils.info("Refreshing downloads data...")
+                            downloads_list = client.get_all_downloads_concurrent()
+                            # Update the known_downloads dictionary too
+                            known_downloads = {}
+                            for download in downloads_list:
+                                if not isinstance(download, dict):
+                                    continue
+                                download_id = download.get('id')
+                                if download_id:
+                                    known_downloads[download_id] = download
                         
                         # Process only the new torrents
                         results = process_torrents_concurrent(
@@ -1491,7 +1593,7 @@ def watch_mode(client, output_dir, cache_dir, config):
                             new_torrents, 
                             output_dir, 
                             cache_dir,
-                            known_downloads,
+                            downloads_list,  # Make sure we pass the list, not the dictionary
                             skip_health_check=True  # Skip health check for incremental updates
                         )
                         
@@ -1517,6 +1619,9 @@ def watch_mode(client, output_dir, cache_dir, config):
                 
             except Exception as e:
                 ui_utils.error(f"Error during watch mode processing: {e}")
+                # Print traceback for better debugging
+                import traceback
+                ui_utils.error(f"Traceback: {traceback.format_exc()}")
                 ui_utils.warning(f"Continuing watch mode in {config['watch_mode_refresh_interval']} seconds...")
                 time.sleep(config['watch_mode_refresh_interval'])
                 
@@ -1544,6 +1649,7 @@ def main():
     parser.add_argument("--watch-health-interval", type=int, help="Health check interval in minutes for watch mode")
     parser.add_argument("--repair-torrents", action="store_true", help="Enable automatic repair of unhealthy torrents")
     parser.add_argument("--no-repair-torrents", action="store_true", help="Disable automatic repair of unhealthy torrents")
+    parser.add_argument("--summary", action="store_true", help="Show only summary information")
     args = parser.parse_args()
 
     # Load configuration
@@ -1574,9 +1680,12 @@ def main():
     # Configure logging based on verbosity
     if args.verbose:
         ui_utils.set_log_level(ui_utils.LogLevel.DEBUG)
-        ui_utils.verbose = True  # Set the verbose flag
     elif args.quiet:
         ui_utils.set_log_level(ui_utils.LogLevel.ERROR)
+    elif args.summary:
+        # Summary mode shows only important summary info
+        ui_utils.set_log_level(ui_utils.LogLevel.WARNING)  # Show warnings and errors
+        ui_utils.set_progress_display(False)  # Hide progress indicators
     else:
         ui_utils.set_log_level(ui_utils.LogLevel.INFO)
     

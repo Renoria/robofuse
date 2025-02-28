@@ -49,8 +49,12 @@ verbose = False  # Add verbose flag global variable
 
 def set_log_level(level):
     """Set the global log level."""
-    global CURRENT_LOG_LEVEL
+    global CURRENT_LOG_LEVEL, verbose
     CURRENT_LOG_LEVEL = level
+    
+    # Automatically set verbose flag based on log level
+    # DEBUG and TRACE levels should enable verbose output
+    verbose = (level.value >= LogLevel.DEBUG.value)
 
 def set_progress_display(show):
     """Control whether to show progress indicators."""
@@ -85,19 +89,38 @@ def log(message, level=LogLevel.INFO, end="\n"):
 
 def success(message):
     """Log a success message."""
-    print(f"{Color.BRIGHT_GREEN}✓ {message}{Color.RESET}")
+    # Success messages should be visible at INFO level and above
+    if CURRENT_LOG_LEVEL.value >= LogLevel.INFO.value:
+        print(f"{Color.BRIGHT_GREEN}✓ {message}{Color.RESET}")
 
 def error(message):
     """Log an error message."""
+    # Error messages are always visible
     print(f"{Color.BRIGHT_RED}✗ {message}{Color.RESET}")
 
 def warning(message):
     """Log a warning message."""
-    print(f"{Color.BRIGHT_YELLOW}⚠ {message}{Color.RESET}")
+    # Warning messages should be visible at WARNING level and above
+    if CURRENT_LOG_LEVEL.value >= LogLevel.WARNING.value:
+        print(f"{Color.BRIGHT_YELLOW}⚠ {message}{Color.RESET}")
 
 def info(message):
     """Log an informational message."""
-    print(f"{Color.BRIGHT_BLUE}ℹ {message}{Color.RESET}")
+    # Info messages should be visible at INFO level and above
+    if CURRENT_LOG_LEVEL.value >= LogLevel.INFO.value:
+        print(f"{Color.BRIGHT_BLUE}ℹ {message}{Color.RESET}")
+
+def debug(message):
+    """Log a debug message."""
+    # Debug messages should be visible at DEBUG level and above
+    if CURRENT_LOG_LEVEL.value >= LogLevel.DEBUG.value:
+        print(f"{Color.BLUE}🔍 {message}{Color.RESET}")
+
+def trace(message):
+    """Log a trace message."""
+    # Trace messages should be visible at TRACE level
+    if CURRENT_LOG_LEVEL.value >= LogLevel.TRACE.value:
+        print(f"{Color.MAGENTA}🔎 {message}{Color.RESET}")
 
 def processing(message):
     """Log a processing message."""

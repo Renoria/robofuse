@@ -88,13 +88,16 @@ python robofuse.py [options]
 |--------|-------------|
 | `--skip-health-check` | Skip health checks for content and links |
 | `--verbose` | Show detailed debug information |
-| `--quiet` | Show minimal output |
+| `--quiet` | Show minimal output (errors only) |
+| `--summary` | Show only summary and warning information (great for cron jobs) |
+| `--watch` | Run in continuous watch mode |
 
 ## What's New in v0.3.5
 
 - **Optimized Download Handling**: The script now intelligently identifies and reuses existing valid downloads from your Real-Debrid "My Downloads" section, significantly reducing API calls for unrestricting links.
 - **Smart Duplicate Management**: When multiple download entries exist for the same link, the script now selects the most recent valid download based on generation date.
-- **Enhanced Logging**: Improved verbose logging provides more detailed information about download selection and processing.
+- **Enhanced Logging System**: Improved verbose logging with clear icons and colors, new summary mode for concise output, and consistent log levels across all commands.
+- **Watch Mode Improvements**: Enhanced stability and type-safety in watch mode, preventing crashes when processing new torrents.
 - **Utility Scripts**: Added new utility scripts for managing your Real-Debrid downloads.
 
 ## Examples
@@ -117,6 +120,11 @@ python robofuse.py --quiet
 For troubleshooting or seeing every operation:
 ```bash
 python robofuse.py --verbose
+```
+
+For concise summaries with warnings (ideal for cron jobs):
+```bash
+python robofuse.py --summary
 ```
 
 ### Skipping Health Checks
