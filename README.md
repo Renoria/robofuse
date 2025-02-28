@@ -29,13 +29,16 @@ For detailed documentation, check the [wiki](wiki/Home.md) in this repository:
 
 ## Installation
 
-1. Clone this repository (for the latest improvements, use the features branch):
+1. Clone this repository:
+
+### Stable version
 ```bash
-# For stable version:
 git clone https://github.com/Renoria/robofuse.git
 cd robofuse
+```
 
-# For latest improvements (v0.3.5+):
+### Latest improvements (v0.3.5+)
+```bash
 git clone -b features https://github.com/Renoria/robofuse.git
 cd robofuse
 ```
@@ -99,14 +102,6 @@ python robofuse.py [options]
 | `--quiet` | Show minimal output (errors only) |
 | `--summary` | Show only summary and warning information (great for cron jobs) |
 | `--watch` | Run in continuous watch mode |
-
-## What's New in v0.3.5
-
-- **Optimized Download Handling**: The script now intelligently identifies and reuses existing valid downloads from your Real-Debrid "My Downloads" section, significantly reducing API calls for unrestricting links.
-- **Smart Duplicate Management**: When multiple download entries exist for the same link, the script now selects the most recent valid download based on generation date.
-- **Enhanced Logging System**: Improved verbose logging with clear icons and colors, new summary mode for concise output, and consistent log levels across all commands.
-- **Watch Mode Improvements**: Enhanced stability and type-safety in watch mode, preventing crashes when processing new torrents.
-- **Utility Scripts**: Added new utility scripts for managing your Real-Debrid downloads.
 
 ## Examples
 
