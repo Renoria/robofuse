@@ -1,0 +1,8 @@
+{
+    "token": "RDAPI",
+    "output_dir": "./OUTPUT-DIR",
+    "cache_dir": "./CACHE-DIR",
+    "concurrent_requests": 32,
+    "general_rate_limit": 60,
+    "torrents_rate_limit": 25
+} 
