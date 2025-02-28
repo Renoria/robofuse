@@ -1,6 +1,6 @@
-# Running Robofuse in Docker
+# Running robofuse in Docker
 
-This guide explains how to run Robofuse in a Docker container, which is ideal for always-on deployments and watch mode.
+This guide explains how to run robofuse in a Docker container, which is ideal for always-on deployments and watch mode.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ This guide explains how to run Robofuse in a Docker container, which is ideal fo
 
 ### Step 1: Prepare Your Environment
 
-Create a new directory for your Robofuse deployment:
+Create a new directory for your robofuse deployment:
 
 ```bash
 mkdir robofuse-docker
@@ -110,9 +110,9 @@ docker-compose restart
 docker restart robofuse
 ```
 
-### Updating Robofuse
+### Updating robofuse
 
-To update to a newer version of Robofuse:
+To update to a newer version of robofuse:
 
 ```bash
 # With Docker Compose

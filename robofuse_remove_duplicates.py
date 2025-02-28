@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Robofuse Duplicate Download Remover
+robofuse Duplicate Download Remover
 
 This script identifies and removes duplicate downloads from your Real-Debrid "My Downloads" section.
 It keeps only the most recent download for each unique link and deletes the rest.
