@@ -21,9 +21,14 @@ A Python-based utility for interacting with Real-Debrid API services efficiently
 
 ## Installation
 
-1. Clone this repository:
+1. Clone this repository (for the latest improvements, use the features branch):
 ```bash
+# For stable version:
 git clone https://github.com/Renoria/robofuse.git
+cd robofuse
+
+# For latest improvements (v0.3.5+):
+git clone -b features https://github.com/Renoria/robofuse.git
 cd robofuse
 ```
 
