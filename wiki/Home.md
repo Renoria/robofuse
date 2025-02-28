@@ -5,6 +5,7 @@ Welcome to the Robofuse wiki! This wiki contains documentation about the Robofus
 ## Available Documentation
 
 - [Running in Background Mode (macOS)](Background-Mode.md) - How to run Robofuse in watch mode in the background on macOS
+- [Docker Deployment](Docker-Deployment.md) - How to run Robofuse in a Docker container
 
 ## About Robofuse
 

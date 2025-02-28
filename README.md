@@ -18,12 +18,14 @@ A Python-based utility for interacting with Real-Debrid API services efficiently
 - Link expiration management and automatic refresh
 - Health checks for content integrity
 - Watch mode for continuous monitoring of new content
+- Docker support for containerized deployments
 
 ## Documentation
 
 For detailed documentation, check the [wiki](wiki/Home.md) in this repository:
 
 - [Running in Background Mode (macOS)](wiki/Background-Mode.md)
+- [Docker Deployment](wiki/Docker-Deployment.md)
 
 ## Installation
 

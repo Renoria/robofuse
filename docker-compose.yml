@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  robofuse:
+    build: .
+    container_name: robofuse
+    restart: unless-stopped
+    volumes:
+      - ./config.json:/app/config.json
+      - ./output:/data/output
+      - ./cache:/data/cache
+    environment:
+      - TZ=Europe/London  # Set your timezone here 
