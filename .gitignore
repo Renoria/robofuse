@@ -7,3 +7,10 @@ __pycache__/
 .vscode/
 *.log
 tmp/
+# Cache and output directories
+cache/
+cache2/
+output*/
+Library/
+# Config with personal API tokens
+config.json
