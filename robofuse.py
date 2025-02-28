@@ -1635,7 +1635,7 @@ def main():
     """Main function to run the script."""
     global ui_utils
 
-    parser = argparse.ArgumentParser(description="RoboFuse: Organize your Real-Debrid downloads")
+    parser = argparse.ArgumentParser(description="robofuse: Organize your Real-Debrid downloads")
     parser.add_argument("--output-dir", help="Directory to save generated .strm files")
     parser.add_argument("--cache-dir", help="Directory to cache API responses")
     parser.add_argument("--concurrent", type=int, help="Number of concurrent requests")
@@ -1650,6 +1650,7 @@ def main():
     parser.add_argument("--repair-torrents", action="store_true", help="Enable automatic repair of unhealthy torrents")
     parser.add_argument("--no-repair-torrents", action="store_true", help="Disable automatic repair of unhealthy torrents")
     parser.add_argument("--summary", action="store_true", help="Show only summary information")
+    parser.add_argument("--no-cache", action="store_true", help="Disable using the cache")
     args = parser.parse_args()
 
     # Load configuration
@@ -1699,11 +1700,14 @@ def main():
 
     # Use config file values as defaults, but override with command line arguments if provided
     output_dir = args.output_dir or config.get("output_dir")
-    cache_dir = args.cache_dir or config.get("cache_dir")
+    cache_dir = None if args.no_cache else (args.cache_dir or config.get("cache_dir"))
     
     if not output_dir:
         ui_utils.error("Please specify an output directory with --output-dir or in your config file.")
         sys.exit(1)
+        
+    if args.no_cache:
+        ui_utils.warning("Cache is disabled. This will increase API usage.")
         
     # Override config with command line arguments if provided
     if args.concurrent:
