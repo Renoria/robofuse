@@ -19,6 +19,12 @@ A Python-based utility for interacting with Real-Debrid API services efficiently
 - Health checks for content integrity
 - Watch mode for continuous monitoring of new content
 
+## Documentation
+
+For detailed documentation, check the [wiki](wiki/Home.md) in this repository:
+
+- [Running in Background Mode (macOS)](wiki/Background-Mode.md)
+
 ## Installation
 
 1. Clone this repository (for the latest improvements, use the features branch):
