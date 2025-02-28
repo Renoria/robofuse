@@ -32,8 +32,8 @@ Create or edit the `config.json` file with your settings before running the scri
 
 ```json
 {
-    "token": "YOUR_REALDEBRID_API_TOKEN",
-    "output_dir": "./downloads",
+    "token": "RD_API",
+    "output_dir": "./Library",
     "cache_dir": "./cache",
     "concurrent_requests": 32,
     "general_rate_limit": 60,
