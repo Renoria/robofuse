@@ -1,7 +1,7 @@
 {
-    "token": "HZ4PNVQT6K7Z4E6MKLNIH4IE3SUWEQBF2SOQ22T5YDWMZS4WXJHA",
-    "output_dir": "./output2",
-    "cache_dir": "./cache2",
+    "token": "YOUR_RD_API_TOKEN",
+    "output_dir": "./Library",
+    "cache_dir": "./cache",
     "concurrent_requests": 32,
     "general_rate_limit": 60,
     "torrents_rate_limit": 25,

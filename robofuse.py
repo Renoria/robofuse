@@ -732,16 +732,23 @@ def check_if_link_expired(generated_date_str=None, cached_date_str=None):
     # If we have the API generation date, use that
     if generated_date_str:
         try:
+            # Replace Z with +00:00 to make it compatible with fromisoformat
             generated_date = datetime.fromisoformat(generated_date_str.replace('Z', '+00:00'))
+            # Convert to naive datetime by removing timezone info for comparison
+            if generated_date.tzinfo:
+                generated_date = generated_date.replace(tzinfo=None) - timedelta(hours=generated_date.tzinfo.utcoffset(generated_date).total_seconds() / 3600)
             days_old = (now - generated_date).days
             return days_old >= 6  # Changed from 7 to 6 days for buffer
-        except ValueError:
+        except ValueError as e:
             pass  # If parsing fails, fall back to cache date
     
     # If we have a cached date, use that as fallback
     if cached_date_str:
         try:
             cached_date = datetime.fromisoformat(cached_date_str)
+            # Ensure cached_date is timezone naive for comparison
+            if cached_date.tzinfo:
+                cached_date = cached_date.replace(tzinfo=None) - timedelta(hours=cached_date.tzinfo.utcoffset(cached_date).total_seconds() / 3600)
             days_old = (now - cached_date).days
             return days_old >= 6  # Changed from 7 to 6 days for buffer
         except ValueError:
@@ -773,49 +780,139 @@ def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_di
     if cache_dir and is_cached(torrent_id, cache_dir):
         cached_data = get_from_cache(torrent_id, cache_dir)
         
+    # Create a reverse lookup from links to download objects
+    # For each link, keep the most recent valid download
+    link_to_download = {}
+    for download_id, download in downloads_dict.items():
+        if 'link' in download:
+            link = download['link']
+            
+            # If we haven't seen this link before, add it
+            if link not in link_to_download:
+                link_to_download[link] = download
+            # If we have seen it, keep the one with the most recent generation date
+            elif 'generated' in download and 'generated' in link_to_download[link]:
+                try:
+                    current_date = datetime.fromisoformat(link_to_download[link]['generated'].replace('Z', '+00:00'))
+                    new_date = datetime.fromisoformat(download['generated'].replace('Z', '+00:00'))
+                    
+                    if new_date > current_date:
+                        if ui_utils.verbose:
+                            print(f"Found newer download for link {link} ({new_date} vs {current_date})")
+                        link_to_download[link] = download
+                except ValueError:
+                    # If date parsing fails, keep the current one
+                    pass
+    
     # Check if any torrent links already exist in downloads list
     existing_downloads = []
     for rd_link in torrent_links:
-        link_id = rd_link.split('/')[-1]  # Extract ID from URL
-        if link_id in downloads_dict:
-            existing_downloads.append(downloads_dict[link_id])
+        # Use the full link to look up in our map
+        if rd_link in link_to_download:
+            existing_downloads.append(link_to_download[rd_link])
     
-    # If no download exists but we have cached data with non-expired links, use that
-    if not existing_downloads and cached_data and 'links' in cached_data:
-        current_time = datetime.now().isoformat()
-        links_valid = all(not check_if_link_expired(link.get('generated'), 
-                                             cached_data.get('cached_date')) 
-                        for link in cached_data['links'])
+    for idx, link in enumerate(torrent["links"]):
+        link_id = link
         
-        if links_valid:
-            ui_utils.file_status(torrent_filename, "success", "using cached links")
-            for cached_link in cached_data['links']:
-                if cached_link.get('streamable') == 1 and cached_link.get('download'):
-                    download_url = cached_link['download']
-                    file_name = cached_link.get('filename', torrent_filename)
-                    save_result = save_link(file_name, download_url, output_dir)
-                    
-                    # Check for skipped extras
-                    if save_result == "skipped_extra":
-                        skipped_extras_count += 1
-                    elif save_result:
-                        saved_files.append(save_result)
+        # Check if download already exists for this link
+        existing_download = link_to_download.get(link)
+        
+        if existing_download:
+            # Use the existing download if it has all required fields
+            has_download_url = "download" in existing_download
+            has_mtime = "generated" in existing_download
             
-            if saved_files:
-                # Return both saved files and skipped extras count
-                return {"saved_files": saved_files, "skipped_extras": skipped_extras_count}
-    
-    # Process existing downloads first if they're valid
-    if existing_downloads:
-        for download in existing_downloads:
-            # Check if existing unrestricted link exists and is not expired
-            if 'link' in download:
-                ui_utils.file_status(torrent_filename, "processing", "checking link")
-                result = client.unrestrict_link(download['link'])
+            if has_download_url and has_mtime:
+                # Check if the link is expired
+                if check_if_link_expired(existing_download["generated"]):
+                    if ui_utils.verbose:
+                        print(f"Existing download is expired, recreating: {existing_download['filename']}")
+                    # Delete the old download to avoid cluttering the downloads list
+                    client.delete_download(existing_download["id"])
+                else:
+                    # Use the existing download URL
+                    if ui_utils.verbose:
+                        print(f"Using existing download: {existing_download['filename']}")
+                    
+                    download_url = existing_download["download"]
+                    filename = sanitize_filename(existing_download["filename"])
+                    
+                    save_result = save_link(filename, download_url, output_dir, idx)
+                    if save_result:
+                        saved_files.append(save_result)
+                    else:
+                        # Count skipped extra content
+                        is_extra = classify_extra_content(filename)
+                        if is_extra:
+                            skipped_extras_count += 1
+                    continue
+        
+        # If we get here, we need to unrestrict the link
+        try:
+            # Check if we have valid cached link data
+            if cached_data and idx < len(cached_data) and cached_data[idx]:
+                unrestricted_link = cached_data[idx]
+                if not check_if_link_expired(cached_date_str=unrestricted_link.get("cached_date")):
+                    if ui_utils.verbose:
+                        print(f"Using cached link for {unrestricted_link.get('filename', f'link {idx+1}')} ({idx+1}/{len(torrent['links'])})")
+                    
+                    download_url = unrestricted_link["download"]
+                    filename = sanitize_filename(unrestricted_link["filename"])
+                    streamable = unrestricted_link.get("streamable", 0)
+                    
+                    if streamable == 0 and should_skip_content(None, download_url):
+                        continue
+                    
+                    save_result = save_link(filename, download_url, output_dir, idx)
+                    if save_result:
+                        saved_files.append(save_result)
+                    else:
+                        # Count skipped extra content
+                        is_extra = classify_extra_content(filename)
+                        if is_extra:
+                            skipped_extras_count += 1
+                    continue
+            
+            # Otherwise, unrestrict the link
+            ui_utils.file_status(torrent.get('filename', torrent['id']), "processing", f"unrestricting link {idx+1}/{len(torrent['links'])}")
+            result = client.unrestrict_link(link)
+            
+            # Check for hoster unavailable error
+            if result and result.get('error') == 'hoster_unavailable':
+                ui_utils.file_status(torrent.get('filename', torrent['id']), "error", "hoster unavailable, needs reinsertion")
+                # Return a special marker that this torrent needs reinsertion
+                return {"needs_reinsertion": True, "torrent": torrent}
+            
+            if result and 'download' in result and result.get('streamable') == 1:
+                file_name = result.get('filename', torrent.get('filename', torrent['id']))
+                download_url = result['download']
+                save_result = save_link(file_name, download_url, output_dir, idx)
+                
+                # Check for skipped extras
+                if save_result == "skipped_extra":
+                    skipped_extras_count += 1
+                elif save_result:
+                    saved_files.append(save_result)
+                    
+                    # Cache this data
+                    if cache_dir:
+                        cache_data = {
+                            'links': [result],
+                            'saved_files': [save_result] if save_result != "skipped_extra" else [],
+                            'skipped_extras': 1 if save_result == "skipped_extra" else 0,
+                            'cached_date': datetime.now().isoformat()
+                        }
+                        save_to_cache(torrent["id"], cache_data, cache_dir)
+                    
+                    continue
+            else:
+                # If download URL is missing, we need to unrestrict it
+                ui_utils.file_status(torrent.get('filename', torrent['id']), "processing", "missing download URL, unrestricting")
+                result = client.unrestrict_link(link)
                 
                 # Check for hoster unavailable error
                 if result and result.get('error') == 'hoster_unavailable':
-                    ui_utils.file_status(torrent_filename, "error", "hoster unavailable, needs reinsertion")
+                    ui_utils.file_status(torrent.get('filename', torrent['id']), "error", "hoster unavailable, needs reinsertion")
                     # Return a special marker that this torrent needs reinsertion
                     return {"needs_reinsertion": True, "torrent": torrent}
                 
@@ -824,14 +921,14 @@ def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_di
                     generated_date = result.get('generated')
                     
                     if check_if_link_expired(generated_date, None):
-                        ui_utils.file_status(torrent_filename, "processing", "link expired, regenerating")
+                        ui_utils.file_status(torrent.get('filename', torrent['id']), "processing", "link expired, regenerating")
                         # Delete the old download if expired
-                        client.delete_download(download['id'])
+                        client.delete_download(torrent['id'])
                     else:
                         # Link is still valid
-                        file_name = download.get('filename', torrent_filename)
+                        file_name = result.get('filename', torrent.get('filename', torrent['id']))
                         download_url = result['download']
-                        save_result = save_link(file_name, download_url, output_dir)
+                        save_result = save_link(file_name, download_url, output_dir, idx)
                         
                         # Check for skipped extras
                         if save_result == "skipped_extra":
@@ -847,65 +944,29 @@ def process_single_torrent(client, torrent, output_dir, downloads_dict, cache_di
                                     'skipped_extras': 1 if save_result == "skipped_extra" else 0,
                                     'cached_date': datetime.now().isoformat()
                                 }
-                                save_to_cache(torrent_id, cache_data, cache_dir)
+                                save_to_cache(torrent["id"], cache_data, cache_dir)
                             
                             continue
                 
                 # If we got here, the link needs to be regenerated
-                client.delete_download(download['id'])
-    
-    # At this point, either we have no downloads or they're all invalid/expired
-    # We need to unrestrict each torrent link
-    new_links = []
-    hoster_unavailable = False
-    
-    for link_index, rd_link in enumerate(torrent_links, start=1):
-        ui_utils.file_status(torrent_filename, "processing", f"unrestricting link {link_index}/{len(torrent_links)}")
-        result = client.unrestrict_link(rd_link)
-        
-        # Check for hoster unavailable
-        if result and result.get('error') == 'hoster_unavailable':
-            ui_utils.file_status(torrent_filename, "error", "hoster unavailable, needs reinsertion")
-            hoster_unavailable = True
-            break
-        
-        if not result or 'download' not in result:
-            ui_utils.file_status(torrent_filename, "error", f"failed to unrestrict link {link_index}")
-            continue
-            
-        # Only use streamable links
-        if result.get('streamable') != 1:
-            ui_utils.file_status(torrent_filename, "skipped", "non-streamable link")
-            continue
-            
-        # Use the returned filename if available; otherwise, fall back on torrent_filename
-        file_name = result.get("filename", torrent_filename)
-        download_url = result.get("download")
-        
-        if download_url:
-            index_arg = link_index if len(torrent_links) > 1 else None
-            save_result = save_link(file_name, download_url, output_dir, index=index_arg)
-                
-            # Check for skipped extras
-            if save_result == "skipped_extra":
-                skipped_extras_count += 1
-            elif save_result:
-                saved_files.append(save_result)
-                new_links.append(result)
+                client.delete_download(torrent['id'])
+        except Exception as e:
+            ui_utils.error(f"Error processing link {idx+1}/{len(torrent['links'])}: {e}")
+            skipped_extras_count += 1
     
     # If we encountered a hoster unavailable error, mark this torrent for reinsertion
-    if hoster_unavailable:
+    if skipped_extras_count > 0:
         return {"needs_reinsertion": True, "torrent": torrent}
     
     # Cache the results
-    if cache_dir and (new_links or skipped_extras_count > 0):
+    if cache_dir and (saved_files or skipped_extras_count > 0):
         cache_data = {
-            'links': new_links,
+            'links': [link for link in torrent['links'] if link in link_to_download],
             'saved_files': saved_files,
             'skipped_extras': skipped_extras_count,
             'cached_date': datetime.now().isoformat()
         }
-        save_to_cache(torrent_id, cache_data, cache_dir)
+        save_to_cache(torrent["id"], cache_data, cache_dir)
     
     # Return a dictionary with results
     if isinstance(saved_files, list):
@@ -1466,30 +1527,59 @@ def watch_mode(client, output_dir, cache_dir, config):
 
 # --- Main Program ---
 def main():
-    parser = argparse.ArgumentParser(description="Download direct links for all torrents in your Real-Debrid account.")
-    parser.add_argument("--output-dir", help="Directory to save the files containing download links.")
-    parser.add_argument("--cache-dir", help="Directory for caching torrent data to avoid reprocessing.")
-    parser.add_argument("--concurrent", type=int, help="Number of concurrent requests (default: from config or 32)")
-    parser.add_argument("--general-rate-limit", type=int, help="General API rate limit per minute (default: from config or 60)")
-    parser.add_argument("--torrents-rate-limit", type=int, help="Torrents API rate limit per minute (default: from config or 25)")
-    parser.add_argument("--skip-health-check", action="store_true", help="Skip health checks for torrents and links")
-    parser.add_argument("--verbose", action="store_true", help="Show detailed debug information")
-    parser.add_argument("--quiet", action="store_true", help="Show minimal output")
-    parser.add_argument("--watch", action="store_true", help="Run in watch mode, continuously monitoring for new torrents")
-    parser.add_argument("--watch-refresh-interval", type=int, help="Seconds between refresh checks in watch mode (default: from config or 10)")
-    parser.add_argument("--watch-health-interval", type=int, help="Minutes between health checks in watch mode (default: from config or 60)")
-    parser.add_argument("--repair-torrents", action="store_true", help="Enable torrent repair (reinsertion) for dead torrents")
-    parser.add_argument("--no-repair-torrents", action="store_true", help="Disable torrent repair (reinsertion) for dead torrents")
+    """Main function to run the script."""
+    global ui_utils
+
+    parser = argparse.ArgumentParser(description="RoboFuse: Organize your Real-Debrid downloads")
+    parser.add_argument("--output-dir", help="Directory to save generated .strm files")
+    parser.add_argument("--cache-dir", help="Directory to cache API responses")
+    parser.add_argument("--concurrent", type=int, help="Number of concurrent requests")
+    parser.add_argument("--general-rate-limit", type=int, help="General API rate limit in requests per minute")
+    parser.add_argument("--torrents-rate-limit", type=int, help="Torrents API rate limit in requests per minute")
+    parser.add_argument("--skip-health-check", action="store_true", help="Skip torrent health checks")
+    parser.add_argument("--verbose", action="store_true", help="Show detailed output")
+    parser.add_argument("--quiet", action="store_true", help="Suppress most output")
+    parser.add_argument("--watch", action="store_true", help="Run in watch mode")
+    parser.add_argument("--watch-refresh-interval", type=int, help="Refresh interval in minutes for watch mode")
+    parser.add_argument("--watch-health-interval", type=int, help="Health check interval in minutes for watch mode")
+    parser.add_argument("--repair-torrents", action="store_true", help="Enable automatic repair of unhealthy torrents")
+    parser.add_argument("--no-repair-torrents", action="store_true", help="Disable automatic repair of unhealthy torrents")
     args = parser.parse_args()
 
-    # Set the log level based on arguments
+    # Load configuration
+    config = load_config()
+    
+    # Apply command line overrides
+    if args.output_dir:
+        config["output_dir"] = args.output_dir
+    if args.cache_dir:
+        config["cache_dir"] = args.cache_dir
+    if args.concurrent:
+        config["concurrent_requests"] = args.concurrent
+    if args.general_rate_limit:
+        config["general_rate_limit"] = args.general_rate_limit
+    if args.torrents_rate_limit:
+        config["torrents_rate_limit"] = args.torrents_rate_limit
+    if args.watch:
+        config["watch_mode_enabled"] = True
+    if args.watch_refresh_interval:
+        config["watch_mode_refresh_interval"] = args.watch_refresh_interval
+    if args.watch_health_interval:
+        config["watch_mode_health_check_interval"] = args.watch_health_interval
+    if args.repair_torrents:
+        config["repair_torrents_enabled"] = True
+    if args.no_repair_torrents:
+        config["repair_torrents_enabled"] = False
+    
+    # Configure logging based on verbosity
     if args.verbose:
-        ui_utils.set_log_level(LogLevel.DEBUG)
+        ui_utils.set_log_level(ui_utils.LogLevel.DEBUG)
+        ui_utils.verbose = True  # Set the verbose flag
     elif args.quiet:
-        ui_utils.set_log_level(LogLevel.WARNING)
+        ui_utils.set_log_level(ui_utils.LogLevel.ERROR)
     else:
-        ui_utils.set_log_level(LogLevel.INFO)
-
+        ui_utils.set_log_level(ui_utils.LogLevel.INFO)
+    
     # Load configuration
     config = load_config()
     token = config["token"]

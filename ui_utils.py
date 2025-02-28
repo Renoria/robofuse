@@ -45,6 +45,7 @@ class LogLevel(IntEnum):
 CURRENT_LOG_LEVEL = LogLevel.INFO
 SHOW_PROGRESS = True
 TERMINAL_WIDTH = shutil.get_terminal_size().columns
+verbose = False  # Add verbose flag global variable
 
 def set_log_level(level):
     """Set the global log level."""

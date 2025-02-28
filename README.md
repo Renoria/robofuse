@@ -1,5 +1,5 @@
 # robofuse
-## v0.3.4
+## v0.3.5
 
 A Python-based utility for interacting with Real-Debrid API services efficiently with smart rate limiting and parallel processing. Robofuse generates .strm files that can be used in media players like Infuse, Jellyfin, or Emby.
 
@@ -9,6 +9,8 @@ A Python-based utility for interacting with Real-Debrid API services efficiently
 - Automatic rate limiting to prevent API throttling
 - Parallel processing for faster operations
 - Colorful terminal interface with progress bars
+- Smart optimization to reuse existing downloads from Real-Debrid "My Downloads"
+- Intelligent selection of most recent valid downloads when duplicates exist
 - Caching system to reduce redundant API calls
 - Generates .strm files compatible with Infuse, Jellyfin, and Emby
 - Configurable output directory for downloaded content
@@ -82,6 +84,12 @@ python robofuse.py [options]
 | `--skip-health-check` | Skip health checks for content and links |
 | `--verbose` | Show detailed debug information |
 | `--quiet` | Show minimal output |
+
+## What's New in v0.3.5
+
+- **Optimized Download Handling**: The script now intelligently identifies and reuses existing valid downloads from your Real-Debrid "My Downloads" section, significantly reducing API calls for unrestricting links.
+- **Smart Duplicate Management**: When multiple download entries exist for the same link, the script now selects the most recent valid download based on generation date.
+- **Enhanced Logging**: Improved verbose logging provides more detailed information about download selection and processing.
 
 ## Examples
 
