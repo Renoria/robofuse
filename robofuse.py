@@ -442,6 +442,18 @@ def classify_extra_content(filename):
     Returns:
         str or None: The category of extra content, or None if not an extra
     """
+    # Special case: Don't classify Extended Cut movies as extras
+    # Common patterns for legitimate extended movies (not extras)
+    extended_movie_patterns = [
+        r'(?i)extended[\.\s]+(cut|edition|version)',  # Extended Cut, Extended Edition, Extended Version
+        r'(?i)[\.\s]extended[\.\s]+', # .Extended. or "Extended" with spaces
+        r'(?i)[\.\s]extended$',  # Ending with Extended
+        r'(?i)extended[\.\s]+(bluray|uhd|2160p|1080p)' # Extended followed by quality indicators
+    ]
+    
+    if any(re.search(pattern, filename) for pattern in extended_movie_patterns):
+        return None
+    
     extras_categories = {
         "trailer": [
             r'(?i)[-_\.\s]trailer[-_\.\s]', 
@@ -450,8 +462,8 @@ def classify_extra_content(filename):
         ],
         "deleted_scene": [
             r'(?i)[-_\.\s]deleted[-_\.\s]scene', 
-            r'(?i)[-_\.\s]extended[-_\.\s]',
-            r'(?i)[-_\.\s]unrated[-_\.\s]'
+            r'(?i)[-_\.\s]deleted[-_\.\s]',
+            r'(?i)[-_\.\s]removal[-_\.\s]'
         ],
         "interview": [
             r'(?i)[-_\.\s]interview[-_\.\s]', 
@@ -468,17 +480,27 @@ def classify_extra_content(filename):
             r'(?i)[-_\.\s]short[-_\.\s]'
         ],
         "extra": [
-            r'(?i)[-_\.\s]extra[-_\.\s]', 
-            r'(?i)[-_\.\s]bonus[-_\.\s]',
+            # Be more specific to avoid matching movie titles containing these words
+            r'(?i)[-_\.\s](extra|extras)[-_\.\s]',  # More specific pattern 
+            r'(?i)[-_\.\s]bonus[-_\.\s](feature|content|material)',
             r'(?i)[-_\.\s]special[-_\.\s]feature[-_\.\s]'
         ],
         "commentary": [
             r'(?i)[-_\.\s]commentary[-_\.\s]',
             r'(?i)[-_\.\s]blooper[-_\.\s]', 
             r'(?i)[-_\.\s]gag[-_\.\s]reel[-_\.\s]'
+        ],
+        "unrated": [
+            # Specific unrated scenes, not full movies
+            r'(?i)[-_\.\s]unrated[-_\.\s]scene', 
+            r'(?i)[-_\.\s]uncensored[-_\.\s]scene'
         ]
     }
     
+    # Special case for unrated movies (not extras)
+    if re.search(r'(?i)unrated[\.\s]+(cut|edition|bluray|uhd|2160p|1080p)', filename):
+        return None
+        
     # Check against patterns and return category if matched
     for category, patterns in extras_categories.items():
         if any(re.search(pattern, filename) for pattern in patterns):
@@ -1053,17 +1075,42 @@ def process_torrents_concurrent(client, torrents, output_dir, cache_dir=None, do
         for future in ui_utils.spinner("Processing TV shows", concurrent.futures.as_completed(future_to_torrent)):
             torrent = future_to_torrent[future]
             try:
-                results = future.result()
-                # Check if this torrent needs reinsertion due to 503 error
-                if isinstance(results, dict) and results.get('needs_reinsertion'):
-                    ui_utils.warning(f"Marking torrent for reinsertion due to hoster unavailability: {torrent.get('filename', torrent['id'])}")
-                    torrents_to_reinsert.append(results.get('torrent'))
-                else:
+                # Fix: Ensure we're handling all possible return types from process_single_torrent
+                result = future.result()
+                
+                # Handle all possible return types correctly
+                if isinstance(result, dict):
+                    # Dictionary result - could be needs_reinsertion or saved_files + skipped_extras
+                    if result.get('needs_reinsertion'):
+                        ui_utils.warning(f"Marking torrent for reinsertion due to hoster unavailability: {torrent.get('filename', torrent['id'])}")
+                        torrents_to_reinsert.append(result.get('torrent'))
+                    else:
+                        # It's a results dict with saved_files
+                        if 'saved_files' in result and isinstance(result['saved_files'], list):
+                            saved_paths.extend(result['saved_files'])
+                            stats["saved_paths"] += len(result['saved_files'])
+                        if 'skipped_extras' in result:
+                            stats["skipped_extras"] += result['skipped_extras']
+                        stats["tv_shows_processed"] += 1
+                        if cache_dir and is_cached(torrent.get('id'), cache_dir):
+                            stats["cached_torrents"] += 1
+                elif isinstance(result, list):
+                    # List of saved paths
+                    saved_paths.extend(result)
+                    stats["saved_paths"] += len(result)
+                    stats["tv_shows_processed"] += 1
                     if cache_dir and is_cached(torrent.get('id'), cache_dir):
                         stats["cached_torrents"] += 1
-                    saved_paths.extend(results)
-                    stats["saved_paths"] += len(results)
+                elif isinstance(result, str):
+                    # Either a single saved path or "skipped_extra" marker
+                    if result != "skipped_extra":
+                        saved_paths.append(result)
+                        stats["saved_paths"] += 1
+                    else:
+                        stats["skipped_extras"] += 1
                     stats["tv_shows_processed"] += 1
+                    if cache_dir and is_cached(torrent.get('id'), cache_dir):
+                        stats["cached_torrents"] += 1
             except Exception as e:
                 ui_utils.error(f"Error processing TV show torrent {torrent.get('filename', 'unknown')}: {e}")
                 stats["torrents_with_errors"] += 1
@@ -1081,22 +1128,47 @@ def process_torrents_concurrent(client, torrents, output_dir, cache_dir=None, do
         for future in ui_utils.spinner("Processing movies", concurrent.futures.as_completed(future_to_torrent)):
             torrent = future_to_torrent[future]
             try:
-                results = future.result()
-                # Check if this torrent needs reinsertion due to 503 error
-                if isinstance(results, dict) and results.get('needs_reinsertion'):
-                    ui_utils.warning(f"Marking torrent for reinsertion due to hoster unavailability: {torrent.get('filename', torrent['id'])}")
-                    torrents_to_reinsert.append(results.get('torrent'))
-                else:
+                # Fix: Handle all possible return types from process_single_torrent
+                result = future.result()
+                
+                # Handle all possible return types correctly
+                if isinstance(result, dict):
+                    # Dictionary result - could be needs_reinsertion or saved_files + skipped_extras
+                    if result.get('needs_reinsertion'):
+                        ui_utils.warning(f"Marking torrent for reinsertion due to hoster unavailability: {torrent.get('filename', torrent['id'])}")
+                        torrents_to_reinsert.append(result.get('torrent'))
+                    else:
+                        # It's a results dict with saved_files
+                        if 'saved_files' in result and isinstance(result['saved_files'], list):
+                            saved_paths.extend(result['saved_files'])
+                            stats["saved_paths"] += len(result['saved_files'])
+                        if 'skipped_extras' in result:
+                            stats["skipped_extras"] += result['skipped_extras']
+                        stats["movies_processed"] += 1
+                        if cache_dir and is_cached(torrent.get('id'), cache_dir):
+                            stats["cached_torrents"] += 1
+                elif isinstance(result, list):
+                    # List of saved paths
+                    saved_paths.extend(result)
+                    stats["saved_paths"] += len(result)
+                    stats["movies_processed"] += 1
                     if cache_dir and is_cached(torrent.get('id'), cache_dir):
                         stats["cached_torrents"] += 1
-                    saved_paths.extend(results)
-                    stats["saved_paths"] += len(results)
+                elif isinstance(result, str):
+                    # Either a single saved path or "skipped_extra" marker
+                    if result != "skipped_extra":
+                        saved_paths.append(result)
+                        stats["saved_paths"] += 1
+                    else:
+                        stats["skipped_extras"] += 1
                     stats["movies_processed"] += 1
+                    if cache_dir and is_cached(torrent.get('id'), cache_dir):
+                        stats["cached_torrents"] += 1
             except Exception as e:
                 ui_utils.error(f"Error processing movie torrent {torrent.get('filename', 'unknown')}: {e}")
                 stats["torrents_with_errors"] += 1
     
-    # Process unknown torrents
+    # Process unknown torrents with similar changes to handle all return types
     if unknown_torrents:
         ui_utils.info(f"Processing {len(unknown_torrents)} unknown torrents...")
         unknown_max_workers = get_optimal_thread_count(len(unknown_torrents), "unknown", total_workers)
@@ -1110,17 +1182,42 @@ def process_torrents_concurrent(client, torrents, output_dir, cache_dir=None, do
             for future in ui_utils.spinner("Processing unknown torrents", concurrent.futures.as_completed(future_to_torrent)):
                 torrent = future_to_torrent[future]
                 try:
-                    results = future.result()
-                    # Check if this torrent needs reinsertion due to 503 error
-                    if isinstance(results, dict) and results.get('needs_reinsertion'):
-                        ui_utils.warning(f"Marking torrent for reinsertion due to hoster unavailability: {torrent.get('filename', torrent['id'])}")
-                        torrents_to_reinsert.append(results.get('torrent'))
-                    else:
+                    # Fix: Handle all possible return types from process_single_torrent
+                    result = future.result()
+                    
+                    # Handle all possible return types correctly
+                    if isinstance(result, dict):
+                        # Dictionary result - could be needs_reinsertion or saved_files + skipped_extras
+                        if result.get('needs_reinsertion'):
+                            ui_utils.warning(f"Marking torrent for reinsertion due to hoster unavailability: {torrent.get('filename', torrent['id'])}")
+                            torrents_to_reinsert.append(result.get('torrent'))
+                        else:
+                            # It's a results dict with saved_files
+                            if 'saved_files' in result and isinstance(result['saved_files'], list):
+                                saved_paths.extend(result['saved_files'])
+                                stats["saved_paths"] += len(result['saved_files'])
+                            if 'skipped_extras' in result:
+                                stats["skipped_extras"] += result['skipped_extras']
+                            stats["unknown_processed"] += 1
+                            if cache_dir and is_cached(torrent.get('id'), cache_dir):
+                                stats["cached_torrents"] += 1
+                    elif isinstance(result, list):
+                        # List of saved paths
+                        saved_paths.extend(result)
+                        stats["saved_paths"] += len(result)
+                        stats["unknown_processed"] += 1
                         if cache_dir and is_cached(torrent.get('id'), cache_dir):
                             stats["cached_torrents"] += 1
-                        saved_paths.extend(results)
-                        stats["saved_paths"] += len(results)
+                    elif isinstance(result, str):
+                        # Either a single saved path or "skipped_extra" marker
+                        if result != "skipped_extra":
+                            saved_paths.append(result)
+                            stats["saved_paths"] += 1
+                        else:
+                            stats["skipped_extras"] += 1
                         stats["unknown_processed"] += 1
+                        if cache_dir and is_cached(torrent.get('id'), cache_dir):
+                            stats["cached_torrents"] += 1
                 except Exception as e:
                     ui_utils.error(f"Error processing unknown torrent {torrent.get('filename', 'unknown')}: {e}")
                     stats["torrents_with_errors"] += 1
@@ -1140,10 +1237,18 @@ def process_torrents_concurrent(client, torrents, output_dir, cache_dir=None, do
                 # Process the reinserted torrent immediately
                 ui_utils.info(f"Processing reinserted torrent: {new_torrent.get('filename', new_torrent['id'])}")
                 try:
-                    results = process_single_torrent(client, new_torrent, output_dir, downloads_dict, cache_dir)
-                    if not isinstance(results, dict):  # Ensure it's not another reinsertion request
-                        saved_paths.extend(results)
-                        stats["saved_paths"] += len(results)
+                    result = process_single_torrent(client, new_torrent, output_dir, downloads_dict, cache_dir)
+                    
+                    # Fix: Handle all possible return types
+                    if isinstance(result, dict) and 'saved_files' in result:
+                        saved_paths.extend(result['saved_files'])
+                        stats["saved_paths"] += len(result['saved_files'])
+                    elif isinstance(result, list):
+                        saved_paths.extend(result)
+                        stats["saved_paths"] += len(result)
+                    elif isinstance(result, str) and result != "skipped_extra":
+                        saved_paths.append(result)
+                        stats["saved_paths"] += 1
                 except Exception as e:
                     ui_utils.error(f"Error processing reinserted torrent: {e}")
                     stats["torrents_with_errors"] += 1
@@ -1301,7 +1406,7 @@ def watch_mode(client, output_dir, cache_dir, config):
                     # Report statistics
                     stats = results["stats"]
                     ui_utils.success(f"Health check completed. Processed {len(downloaded_torrents)} torrents, "
-                                    f"saved {len(results['saved_paths'])} links, "
+                                    f"saved {stats['saved_paths']} links, "
                                     f"reinserted {stats['reinserted_torrents']} torrents.")
                     
                 else:
@@ -1337,7 +1442,7 @@ def watch_mode(client, output_dir, cache_dir, config):
                         # Report statistics
                         stats = results["stats"]
                         ui_utils.success(f"Processed {len(new_torrents)} new torrents, "
-                                        f"saved {len(results['saved_paths'])} links.")
+                                        f"saved {stats['saved_paths']} links.")
                     else:
                         ui_utils.info("No new torrents found.")
                 
