@@ -95,6 +95,7 @@ python robofuse.py [options]
 - **Optimized Download Handling**: The script now intelligently identifies and reuses existing valid downloads from your Real-Debrid "My Downloads" section, significantly reducing API calls for unrestricting links.
 - **Smart Duplicate Management**: When multiple download entries exist for the same link, the script now selects the most recent valid download based on generation date.
 - **Enhanced Logging**: Improved verbose logging provides more detailed information about download selection and processing.
+- **Utility Scripts**: Added new utility scripts for managing your Real-Debrid downloads.
 
 ## Examples
 
@@ -134,6 +135,33 @@ python robofuse.py --watch
 ```
 
 You can also configure watch mode in your config.json file by setting `watch_mode_enabled` to true.
+
+## Utility Scripts
+
+Robofuse includes additional utility scripts to help manage your Real-Debrid account:
+
+### Cleaning Up Downloads
+
+To remove all downloads from your Real-Debrid "My Downloads" section:
+
+```bash
+python rd_clear_downloads.py
+```
+
+Options:
+- `--force`: Skip confirmation prompt
+  
+### Removing Duplicate Downloads
+
+To find and remove duplicate downloads, keeping only the most recent one for each unique link:
+
+```bash
+python rd_remove_duplicates.py
+```
+
+Options:
+- `--force`: Skip confirmation prompt
+- `--dry-run`: Show what would be deleted without actually deleting anything
 
 ## Requirements
 
