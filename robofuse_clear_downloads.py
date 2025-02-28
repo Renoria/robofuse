@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Real-Debrid Download Cleaner
+Robofuse Download Cleaner
 
 This script removes all downloads from your Real-Debrid "My Downloads" section.
 It requires confirmation before deletion and uses the same config.json as robofuse.

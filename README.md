@@ -145,7 +145,7 @@ Robofuse includes additional utility scripts to help manage your Real-Debrid acc
 To remove all downloads from your Real-Debrid "My Downloads" section:
 
 ```bash
-python rd_clear_downloads.py
+python robofuse_clear_downloads.py
 ```
 
 Options:
@@ -156,7 +156,7 @@ Options:
 To find and remove duplicate downloads, keeping only the most recent one for each unique link:
 
 ```bash
-python rd_remove_duplicates.py
+python robofuse_remove_duplicates.py
 ```
 
 Options:
