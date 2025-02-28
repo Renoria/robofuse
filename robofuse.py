@@ -397,7 +397,7 @@ def get_from_cache(torrent_id, cache_dir):
 def save_to_cache(torrent_id, data, cache_dir):
     """Save torrent data to cache."""
     if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
+        os.makedirs(cache_dir, exist_ok=True)
     cache_path = os.path.join(cache_dir, f"{get_cache_key(torrent_id)}.json")
     with open(cache_path, 'w') as f:
         json.dump(data, f)
@@ -638,11 +638,11 @@ def save_link(filename, download_link, output_dir, index=None):
             
             # Create the extras folders if they don't exist
             if not os.path.exists(extras_folder):
-                os.makedirs(extras_folder)
+                os.makedirs(extras_folder, exist_ok=True)
                 ui_utils.file_status(extras_folder, "success", "extras folder created")
                 
             if not os.path.exists(extras_type_folder):
-                os.makedirs(extras_type_folder)
+                os.makedirs(extras_type_folder, exist_ok=True)
                 ui_utils.file_status(extras_type_folder, "success", f"{extras_type} folder created")
                 
             # Use a different filename format for extras
@@ -653,15 +653,15 @@ def save_link(filename, download_link, output_dir, index=None):
         
         # Create folders if they don't exist
         if not os.path.exists(tv_shows_folder):
-            os.makedirs(tv_shows_folder)
+            os.makedirs(tv_shows_folder, exist_ok=True)
             ui_utils.file_status(tv_shows_folder, "success", "TV Shows folder created")
             
         if not os.path.exists(series_folder):
-            os.makedirs(series_folder)
+            os.makedirs(series_folder, exist_ok=True)
             ui_utils.file_status(series_folder, "success", "series folder created")
             
         if not os.path.exists(season_folder):
-            os.makedirs(season_folder)
+            os.makedirs(season_folder, exist_ok=True)
             ui_utils.file_status(season_folder, "success", "season folder created")
         
         # Create more descriptive strm filename with show info
@@ -683,11 +683,11 @@ def save_link(filename, download_link, output_dir, index=None):
             
             # Create the extras folders if they don't exist
             if not os.path.exists(extras_folder):
-                os.makedirs(extras_folder)
+                os.makedirs(extras_folder, exist_ok=True)
                 ui_utils.file_status(extras_folder, "success", "extras folder created")
                 
             if not os.path.exists(extras_type_folder):
-                os.makedirs(extras_type_folder)
+                os.makedirs(extras_type_folder, exist_ok=True)
                 ui_utils.file_status(extras_type_folder, "success", f"{extras_type} folder created")
                 
             # Use a different filename format for extras
@@ -698,15 +698,15 @@ def save_link(filename, download_link, output_dir, index=None):
         
         # Create the folders if they don't exist
         if not os.path.exists(movies_folder):
-            os.makedirs(movies_folder)
+            os.makedirs(movies_folder, exist_ok=True)
             ui_utils.file_status(movies_folder, "success", "Movies folder created")
             
         if not os.path.exists(movie_folder):
-            os.makedirs(movie_folder)
+            os.makedirs(movie_folder, exist_ok=True)
             ui_utils.file_status(movie_folder, "success", "movie folder created")
             
         if extras_type and not os.path.exists(target_folder):
-            os.makedirs(target_folder)
+            os.makedirs(target_folder, exist_ok=True)
             ui_utils.file_status(target_folder, "success", f"{extras_type} folder created")
         
         strm_file_path = os.path.join(target_folder, strm_filename)
@@ -1733,7 +1733,7 @@ def main():
     # Ensure the output directory exists
     if not os.path.exists(output_dir):
         try:
-            os.makedirs(output_dir)
+            os.makedirs(output_dir, exist_ok=True)
             ui_utils.success(f"Created output directory: {output_dir}")
         except OSError as e:
             ui_utils.error(f"Error creating directory {output_dir}: {e}")
@@ -1742,7 +1742,7 @@ def main():
     # Create cache directory if specified
     if cache_dir and not os.path.exists(cache_dir):
         try:
-            os.makedirs(cache_dir)
+            os.makedirs(cache_dir, exist_ok=True)
             ui_utils.success(f"Created cache directory: {cache_dir}")
         except OSError as e:
             ui_utils.error(f"Error creating cache directory {cache_dir}: {e}")
