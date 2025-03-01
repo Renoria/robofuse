@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY robofuse.py .
 COPY ui_utils.py .
-COPY config.json.template config.json
+COPY config.json .
 
 # Create directories for output and cache
 RUN mkdir -p /data/output

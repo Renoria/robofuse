@@ -8,29 +8,24 @@ This guide explains how to run robofuse in a Docker container, which is ideal fo
 - Docker Compose (optional, but recommended)
 - Your Real-Debrid API token
 
+## Important: Configuration File Requirement
+
+A `config.json` file with your Real-Debrid API token is **required** to run robofuse in Docker. The repository includes a sample configuration file that you'll need to modify with your own API token.
+
 ## Option 1: Using Docker Compose (Recommended)
 
-### Step 1: Prepare Your Environment
+### Step 1: Clone the Repository
 
-Create a new directory for your robofuse deployment:
+Clone the repository to your preferred location (using the features branch):
 
 ```bash
-mkdir robofuse-docker
-cd robofuse-docker
+git clone -b features https://github.com/Renoria/robofuse.git
+cd robofuse
 ```
 
-### Step 2: Copy the Configuration Files
+### Step 2: Configure Your Settings
 
-Download or copy the following files from the repository:
-- `Dockerfile`
-- `docker-compose.yml`
-- `requirements.txt`
-- `robofuse.py`
-- `ui_utils.py`
-
-### Step 3: Configure Your Settings
-
-Create a `config.json` file with your Real-Debrid API token:
+Edit the `config.json` file and add your Real-Debrid API token:
 
 ```json
 {
@@ -49,7 +44,7 @@ Create a `config.json` file with your Real-Debrid API token:
 
 Make sure to replace `YOUR_RD_API_TOKEN` with your actual Real-Debrid API token.
 
-### Step 4: Launch the Container
+### Step 3: Launch the Container
 
 ```bash
 docker-compose up -d
@@ -60,7 +55,7 @@ This will:
 2. Start the container in the background
 3. Configure it to automatically restart if it crashes or if the system reboots
 
-### Step 5: View Logs (Optional)
+### Step 4: View Logs (Optional)
 
 ```bash
 docker logs -f robofuse
@@ -70,13 +65,17 @@ docker logs -f robofuse
 
 If you prefer not to use Docker Compose, you can use the Docker CLI directly:
 
-### Step 1: Build the Docker Image
+### Step 1: Clone the Repository and Configure
+
+Follow Step 1 and Step 2 from Option 1 to clone the repository and set up your config.json file.
+
+### Step 2: Build the Docker Image
 
 ```bash
 docker build -t robofuse .
 ```
 
-### Step 2: Run the Container
+### Step 3: Run the Container
 
 ```bash
 docker run -d \
@@ -153,7 +152,9 @@ If you're running Docker on a NAS system like Synology or QNAP, you may need to 
 
 ```yaml
 volumes:
-  - /volume1/docker/robofuse/config.json:/app/config.json
+  - /volume1/docker/robofuse/config.json:/app/config.json  # Required: mount your config.json
   - /volume1/media/robofuse_output:/data/output
   - /volume1/docker/robofuse/cache:/data/cache
-``` 
+```
+
+Remember that the config.json volume mount is required. Be sure to update the config.json file with your Real-Debrid API token before starting the container.
