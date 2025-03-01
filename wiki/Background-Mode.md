@@ -59,10 +59,10 @@ deactivate
 
 ### Step 3: Configure robofuse
 
-Create or edit your `config.json` file with your Real-Debrid API token and watch mode settings:
+Edit your `config.json` file with your Real-Debrid API token and watch mode settings:
 
 ```bash
-# Edit the configuration file
+cd ~/robofuse
 nano config.json
 ```
 
@@ -194,7 +194,6 @@ If robofuse isn't running correctly, check the error log:
 ```bash
 cat ~/Library/Logs/robofuse_error.log
 ```
-
 For real-time monitoring:
 ```bash
 tail -f ~/Library/Logs/robofuse.log

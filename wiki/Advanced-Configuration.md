@@ -12,7 +12,7 @@ This guide covers all configuration options available in robofuse, along with de
 
 ## Configuration File Location
 
-The configuration file (`config.json`) should be located in the root directory of your robofuse installation. If running in Docker, the file should be mounted as a volume (see [Docker Deployment](Docker-Deployment.md)).
+The configuration file (`config.json`) should be located in the root directory of your robofuse installation. If running in Docker, the file should be mounted as a volume (see [Docker Deployment](./Docker-Deployment.md)).
 
 ## Core Settings
 

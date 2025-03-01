@@ -51,17 +51,17 @@ python3 robofuse.py
 
 ## Documentation
 
-For detailed documentation, check the [wiki](wiki/Home.md) in this repository:
+For detailed documentation, check the [wiki](./wiki/Home.md) in this repository:
 
-- [Getting Started Guide](wiki/Getting-Started.md) - Detailed setup instructions
-- [User Guide](wiki/User-Guide.md) - Complete usage documentation
-- [Running in Background Mode (macOS)](wiki/Background-Mode.md) - Run in background on macOS
-- [Running in Background Mode (Windows)](wiki/Background-Mode-Windows.md) - Run in background on Windows
-- [Running in Background Mode (Linux)](wiki/Background-Mode-Linux.md) - Run in background on Linux
-- [Docker Deployment](wiki/Docker-Deployment.md) - Deploy with Docker
-- [Advanced Configuration](wiki/Advanced-Configuration.md) - All configuration options
-- [Troubleshooting](wiki/Troubleshooting.md) - Common issues and solutions
-- [FAQ](wiki/FAQ.md) - Frequently asked questions
+- [Getting Started Guide](./wiki/Getting-Started.md) - Detailed setup instructions
+- [User Guide](./wiki/User-Guide.md) - Complete usage documentation
+- [Running in Background Mode (macOS)](./wiki/Background-Mode.md) - Run in background on macOS
+- [Running in Background Mode (Windows)](./wiki/Background-Mode-Windows.md) - Run in background on Windows
+- [Running in Background Mode (Linux)](./wiki/Background-Mode-Linux.md) - Run in background on Linux
+- [Docker Deployment](./wiki/Docker-Deployment.md) - Deploy with Docker
+- [Advanced Configuration](./wiki/Advanced-Configuration.md) - All configuration options
+- [Troubleshooting](./wiki/Troubleshooting.md) - Common issues and solutions
+- [FAQ](./wiki/FAQ.md) - Frequently asked questions
 
 ## Installation
 
@@ -86,7 +86,7 @@ pip install -r requirements.txt
 
 ## Basic Configuration
 
-Create or edit the `config.json` file with your settings:
+Edit the `config.json` file with your settings:
 
 ```json
 {
@@ -101,7 +101,7 @@ Create or edit the `config.json` file with your settings:
 - `output_dir`: Directory where STRM files will be created
 - `cache_dir`: Directory for caching data to minimize API calls
 
-See [Advanced Configuration](wiki/Advanced-Configuration.md) for all options.
+See [Advanced Configuration](./wiki/Advanced-Configuration.md) for all options.
 
 ### Getting Your API Token
 
@@ -121,7 +121,7 @@ Run in watch mode (monitors for new torrents):
 python3 robofuse.py --watch
 ```
 
-For more examples and advanced usage, see the [User Guide](wiki/User-Guide.md).
+For more examples and advanced usage, see the [User Guide](./wiki/User-Guide.md).
 
 ## Requirements
 

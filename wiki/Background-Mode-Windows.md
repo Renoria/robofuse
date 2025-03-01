@@ -182,4 +182,13 @@ To follow the log file in real-time using PowerShell:
 
 ```powershell
 Get-Content -Path "C:\path\to\robofuse\logs\robofuse.log" -Wait
+```
+
+### Step 3: Configure robofuse
+
+Edit your `config.json` file with your Real-Debrid API token:
+
+```bash
+cd C:\robofuse
+notepad config.json
 ``` 

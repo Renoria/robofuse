@@ -112,6 +112,15 @@ sudo systemctl status robofuse
 
 You should see output indicating that the service is active (running).
 
+### Step 3: Configure robofuse
+
+Edit your `config.json` file with your Real-Debrid API token:
+
+```bash
+cd ~/robofuse
+nano config.json
+```
+
 ## Using Screen or Tmux
 
 Screen and Tmux are terminal multiplexers that allow you to run sessions in the background.

@@ -53,7 +53,7 @@ You should see the help message listing available command options.
 
 ## Basic Configuration
 
-1. Create a `config.json` file in the robofuse directory (or copy from the template):
+Edit the `config.json` file in the robofuse directory with your Real-Debrid API token:
 
 ```json
 {
@@ -70,7 +70,7 @@ You should see the help message listing available command options.
 }
 ```
 
-2. Replace `YOUR_RD_API_TOKEN` with your actual Real-Debrid API token.
+Replace `YOUR_RD_API_TOKEN` with your actual Real-Debrid API token.
 
 ### Getting Your API Token
 
