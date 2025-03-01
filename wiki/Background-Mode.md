@@ -120,6 +120,11 @@ EOF
 
 Make sure to edit the plist file to replace `USERNAME` with your actual macOS username.
 
+> **Note:** If you encounter errors with the launch agent, you may need to properly encode the ampersands in the command string as XML entities. Edit the file with a text editor and change `&&` to `&amp;&amp;` like this:
+> ```xml
+> <string>cd ~/robofuse &amp;&amp; source venv/bin/activate &amp;&amp; python robofuse.py --watch</string>
+> ```
+
 ### Step 5: Load the Launch Agent
 
 Set correct permissions:
@@ -139,6 +144,12 @@ Start the service:
 ```bash
 launchctl start com.user.robofuse
 ```
+
+> **Alternative method:** On some macOS versions, you may need to use the `-w` flag to ensure the service persists across reboots:
+> ```bash
+> cd ~/Library/LaunchAgents
+> launchctl load -w com.user.robofuse.plist
+> ```
 
 ## Managing the Service
 
