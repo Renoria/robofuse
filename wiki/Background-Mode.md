@@ -181,6 +181,11 @@ View the log output:
 cat ~/Library/Logs/robofuse.log
 ```
 
+For real-time monitoring:
+```bash
+tail -f ~/Library/Logs/robofuse.log
+```
+
 ### Starting and Stopping the Service
 
 To stop the service:
@@ -199,6 +204,31 @@ launchctl unload ~/Library/LaunchAgents/com.user.robofuse.plist
 launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
 ```
 
+### Removing the Service
+
+If you want to completely remove the robofuse background service:
+
+1. First, stop the service:
+```bash
+launchctl unload ~/Library/LaunchAgents/com.user.robofuse.plist
+```
+
+2. Delete the launch agent plist file:
+```bash
+rm ~/Library/LaunchAgents/com.user.robofuse.plist
+```
+
+3. Delete the log files:
+```bash
+rm ~/Library/Logs/robofuse.log
+rm ~/Library/Logs/robofuse_error.log
+```
+
+4. Optionally, if you want to remove the entire robofuse installation:
+```bash
+rm -rf ~/robofuse
+```
+
 ## Troubleshooting
 
 ### Checking for Errors
@@ -207,10 +237,6 @@ If robofuse isn't running correctly, check the error log:
 
 ```bash
 cat ~/Library/Logs/robofuse_error.log
-```
-For real-time monitoring:
-```bash
-tail -f ~/Library/Logs/robofuse.log
 ```
 
 ### Common Issues
