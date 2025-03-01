@@ -245,7 +245,7 @@ launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
 
 For long-running instances, consider implementing log rotation.
 
-Create the logrotate configuration:
+Create the logrotate configuration (replace USERNAME with your actual macOS username):
 
 ```bash
 cat > ~/robofuse_logrotate.conf << EOF
@@ -265,6 +265,8 @@ cat > ~/robofuse_logrotate.conf << EOF
 }
 EOF
 ```
+
+Make sure to edit the configuration file to replace `USERNAME` with your actual macOS username.
 
 Add to your crontab (opens editor):
 
