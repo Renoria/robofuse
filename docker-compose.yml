@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   robofuse:
     build: .
@@ -10,4 +8,5 @@ services:
       - ./output:/data/output
       - ./cache:/data/cache
     environment:
-      - TZ=Europe/London  # Set your timezone here 
+      - TZ=Europe/London  # Set your timezone here
+      - PYTHONUNBUFFERED=1  # Force Python to run in unbuffered mode 

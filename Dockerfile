@@ -18,5 +18,9 @@ RUN mkdir -p /data/cache
 # Set volume mount points
 VOLUME ["/data/output", "/data/cache", "/app/config.json"]
 
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV NO_COLOR=1
+
 # Set default command to run in watch mode with summary output
-CMD ["python", "robofuse.py", "--watch", "--summary"] 
+CMD ["python", "-u", "robofuse.py", "--watch", "--summary"] 

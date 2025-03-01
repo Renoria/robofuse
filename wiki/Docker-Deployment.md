@@ -44,22 +44,23 @@ Edit the `config.json` file and add your Real-Debrid API token:
 
 Make sure to replace `YOUR_RD_API_TOKEN` with your actual Real-Debrid API token.
 
-### Step 3: Launch the Container
+### Step 3: Start the Container
 
 ```bash
-docker-compose up -d
+# Build and start the container
+docker compose up -d
 ```
 
-This will:
-1. Build the Docker image
-2. Start the container in the background
-3. Configure it to automatically restart if it crashes or if the system reboots
+This will build the Docker image if it doesn't exist and start the container in detached mode.
 
-### Step 4: View Logs (Optional)
+### Step 4: View Logs
 
 ```bash
-docker logs -f robofuse
+# View logs
+docker compose logs -f
 ```
+
+> **Note on Log Visibility**: When viewing logs in Docker, you may encounter issues with text readability in some log viewers like Dozzle. We've configured the application to disable color output in Docker containers by default to improve log readability.
 
 ## Option 2: Using Docker CLI
 
@@ -93,7 +94,7 @@ docker run -d \
 
 ```bash
 # With Docker Compose
-docker-compose down
+docker compose down
 
 # With Docker CLI
 docker stop robofuse
@@ -103,7 +104,7 @@ docker stop robofuse
 
 ```bash
 # With Docker Compose
-docker-compose restart
+docker compose restart
 
 # With Docker CLI
 docker restart robofuse

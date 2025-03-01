@@ -34,6 +34,24 @@ class Color:
     BG_CYAN = "\033[46m"
     BG_WHITE = "\033[47m"
 
+    @staticmethod
+    def init():
+        # Disable colors if NO_COLOR environment variable is set
+        if os.environ.get('NO_COLOR', '0') == '1':
+            Color.RESET = ""
+            Color.BOLD = ""
+            Color.RED = ""
+            Color.GREEN = ""
+            Color.YELLOW = ""
+            Color.BLUE = ""
+            Color.MAGENTA = ""
+            Color.CYAN = ""
+            Color.WHITE = ""
+            Color.BRIGHT_RED = ""
+
+# Initialize color settings
+Color.init()
+
 class LogLevel(IntEnum):
     ERROR = 0
     WARNING = 1
