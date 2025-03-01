@@ -1,46 +1,56 @@
 # Running robofuse in Background Mode on macOS
 
-This guide explains how to run the robofuse script in watch mode in the background on macOS, allowing it to continue running even after closing the terminal window.
+This guide explains how to set up robofuse to run automatically in the background on macOS using Launch Agents with a Python virtual environment.
 
 ## Table of Contents
-- [Initial Setup](#initial-setup)
-- [Setting Up Watch Mode](#setting-up-watch-mode)
-- [Option 1: Using nohup (Simple Method)](#option-1-using-nohup-simple-method)
-- [Option 2: Using launchd (macOS Native Method)](#option-2-using-launchd-macos-native-method)
+- [Prerequisites](#prerequisites)
+- [Setting Up robofuse as a Background Service](#setting-up-robofuse-as-a-background-service)
+- [Managing the Service](#managing-the-service)
+- [Troubleshooting](#troubleshooting)
 - [Additional Tips](#additional-tips)
 
-## Initial Setup
+## Prerequisites
 
-Before setting up robofuse in background mode, ensure you have completed these initial steps:
+- macOS 10.15 (Catalina) or newer
+- Python 3.6 or newer
+- Terminal access
 
-1. Clone the repository (if you haven't already):
-   ```bash
-   git clone -b features https://github.com/Renoria/robofuse.git
-   cd robofuse
-   ```
+## Setting Up robofuse as a Background Service
 
-2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Step 1: Clone the Repository
 
-3. Set up your `config.json` file with your Real-Debrid API token:
-   ```json
-   {
-       "token": "YOUR_RD_API_TOKEN",
-       "output_dir": "./Library",
-       "cache_dir": "./cache"
-   }
-   ```
+```bash
+# Clone the repository to your home directory
+git clone -b features https://github.com/Renoria/robofuse.git ~/robofuse
+cd ~/robofuse
+```
 
-4. Test the script first in normal mode to ensure it works correctly:
-   ```bash
-   python3 robofuse.py
-   ```
+### Step 2: Create and Configure a Virtual Environment
 
-## Setting Up Watch Mode
+```bash
+# Create a virtual environment
+python3 -m venv venv
 
-For background operation, you should enable watch mode in your `config.json` file:
+# Activate the virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Deactivate the virtual environment when done
+deactivate
+```
+
+### Step 3: Configure robofuse
+
+Create or edit your `config.json` file with your Real-Debrid API token and watch mode settings:
+
+```bash
+# Edit the configuration file
+nano config.json
+```
+
+Your config.json should include:
 
 ```json
 {
@@ -53,72 +63,17 @@ For background operation, you should enable watch mode in your `config.json` fil
 }
 ```
 
-Setting `watch_mode_enabled` to `true` ensures that robofuse automatically starts in watch mode, monitoring for new torrents. This is particularly important for background operation, as it allows robofuse to run continuously and process new content without manual intervention.
+The `watch_mode_enabled` setting ensures robofuse automatically monitors for new torrents. You can also pass the `--watch` flag in your launch agent, but setting it in the config file provides redundancy.
 
-You can also pass the `--watch` flag in your commands, but setting it in the config file is more reliable for background operation.
+### Step 4: Create a Launch Agent
 
-## Option 1: Using nohup (Simple Method)
-
-The quickest solution that requires no additional setup:
-
-```bash
-nohup python3 robofuse.py --watch > robofuse.log 2>&1 &
-```
-
-This command:
-- `nohup` makes the process immune to hangups (continues after terminal closes)
-- `> robofuse.log` redirects standard output to a log file
-- `2>&1` redirects error messages to the same log file
-- `&` runs the process in the background
-
-### Managing the background process
-
-To check if robofuse is running:
-```bash
-ps aux | grep robofuse
-```
-
-To stop the robofuse process:
-```bash
-pkill -f "python3 robofuse.py --watch"
-```
-
-To view the log file:
-```bash
-cat robofuse.log
-```
-
-Or to follow the log in real-time:
-```bash
-tail -f robofuse.log
-```
-
-## Option 2: Using launchd (macOS Native Method)
-
-This is the recommended "Mac way" of creating background services that can auto-start with a virtual environment:
-
-### Step 1: Create a virtual environment
-
-```bash
-# Create a virtual environment in the robofuse directory
-cd /path/to/robofuse
-python3 -m venv venv
-
-# Activate it and install dependencies
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Deactivate when done with setup
-deactivate
-```
-
-### Step 2: Create a launch agent plist file
+Create a new file in ~/Library/LaunchAgents directory:
 
 ```bash
 mkdir -p ~/Library/LaunchAgents
 ```
 
-Create the plist file (replace `/path/to/robofuse` with your actual path and USERNAME with your macOS username):
+Create the plist file (replacing USERNAME with your actual macOS username):
 
 ```bash
 cat > ~/Library/LaunchAgents/com.user.robofuse.plist << EOF
@@ -132,7 +87,7 @@ cat > ~/Library/LaunchAgents/com.user.robofuse.plist << EOF
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>cd /path/to/robofuse && source venv/bin/activate && python robofuse.py --watch</string>
+        <string>cd ~/robofuse && source venv/bin/activate && python robofuse.py --watch</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -147,11 +102,9 @@ cat > ~/Library/LaunchAgents/com.user.robofuse.plist << EOF
 EOF
 ```
 
-Make sure to edit the plist file to replace:
-- `/path/to/robofuse` with the actual path to your robofuse directory
-- `USERNAME` with your actual macOS username
+Make sure to edit the plist file to replace `USERNAME` with your actual macOS username.
 
-### Step 3: Load the launch agent
+### Step 5: Load the Launch Agent
 
 ```bash
 # Set correct permissions
@@ -164,7 +117,21 @@ launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
 launchctl start com.user.robofuse
 ```
 
-### Step 4: Managing the service
+## Managing the Service
+
+### Checking Service Status
+
+To verify that robofuse is running:
+
+```bash
+# Check if service is listed
+launchctl list | grep robofuse
+
+# View the log output
+cat ~/Library/Logs/robofuse.log
+```
+
+### Starting and Stopping the Service
 
 To stop the service:
 ```bash
@@ -176,12 +143,15 @@ To start the service again:
 launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
 ```
 
-To check if the service is running:
+To restart the service (for example, after updating robofuse):
 ```bash
-launchctl list | grep robofuse
+launchctl unload ~/Library/LaunchAgents/com.user.robofuse.plist
+launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
 ```
 
-### Troubleshooting
+## Troubleshooting
+
+### Checking for Errors
 
 If robofuse isn't running correctly, check the error log:
 
@@ -189,49 +159,91 @@ If robofuse isn't running correctly, check the error log:
 cat ~/Library/Logs/robofuse_error.log
 ```
 
-#### Common Issues
+For real-time monitoring:
+```bash
+tail -f ~/Library/Logs/robofuse.log
+```
 
-1. **Missing Dependencies**: If you see errors about missing modules, ensure your virtual environment is correctly set up:
+### Common Issues
+
+1. **Missing Dependencies**: If you see errors about missing modules:
    ```bash
-   cd /path/to/robofuse
+   cd ~/robofuse
    source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-2. **LibreSSL Warnings**: You might see warnings about LibreSSL compatibility with urllib3. These are generally safe to ignore, but can be fixed by downgrading urllib3:
+2. **LibreSSL Warnings**: You might see warnings about LibreSSL compatibility with urllib3. These are generally safe to ignore, but can be fixed by:
    ```bash
+   cd ~/robofuse
    source venv/bin/activate
    pip install 'urllib3<2.0'
    ```
 
-### Advantages of the launchd method with virtual environment:
-- Uses an isolated Python environment that won't interfere with system packages
-- Automatically restarts if it crashes
-- Starts when you log in
-- Integrates with macOS system management
-- Provides separate log files for standard output and errors
+3. **Permission Issues**: Ensure robofuse.py is executable:
+   ```bash
+   chmod +x ~/robofuse/robofuse.py
+   ```
 
 ## Additional Tips
 
 ### Adding Command Line Arguments
 
-If you want to add additional command-line arguments (like `--verbose`), simply add them to the command or the ProgramArguments array in the plist file.
+If you want to add additional command-line arguments (like `--verbose`), modify the string in your plist file:
+
+```xml
+<string>cd ~/robofuse && source venv/bin/activate && python robofuse.py --watch --verbose</string>
+```
+
+### Updating robofuse
+
+When a new version is available:
+
+```bash
+# Stop the service
+launchctl unload ~/Library/LaunchAgents/com.user.robofuse.plist
+
+# Update the repository
+cd ~/robofuse
+git pull
+
+# Update dependencies
+source venv/bin/activate
+pip install -r requirements.txt
+deactivate
+
+# Restart the service
+launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
+```
 
 ### Log Rotation
 
-For long-running instances, consider implementing log rotation to prevent log files from growing too large:
+For long-running instances, consider implementing log rotation:
 
 ```bash
-logrotate -s /path/to/logrotate.status /path/to/logrotate.conf
-```
-
-Where logrotate.conf contains:
-```
-/path/to/robofuse/robofuse.log {
+# Create logrotate configuration
+cat > ~/robofuse_logrotate.conf << EOF
+/Users/USERNAME/Library/Logs/robofuse.log {
     daily
     rotate 7
     compress
     missingok
     notifempty
 }
+/Users/USERNAME/Library/Logs/robofuse_error.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+}
+EOF
+
+# Add to your crontab (opens editor)
+crontab -e
+```
+
+Add this line to your crontab:
+```
+0 0 * * * /usr/sbin/logrotate -s ~/robofuse_logrotate.status ~/robofuse_logrotate.conf
 ``` 
