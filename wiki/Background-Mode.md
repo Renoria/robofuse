@@ -19,25 +19,41 @@ This guide explains how to set up robofuse to run automatically in the backgroun
 
 ### Step 1: Clone the Repository
 
+Clone the repository to your home directory:
+
 ```bash
-# Clone the repository to your home directory
 git clone -b features https://github.com/Renoria/robofuse.git ~/robofuse
+```
+
+Navigate to the robofuse directory:
+
+```bash
 cd ~/robofuse
 ```
 
 ### Step 2: Create and Configure a Virtual Environment
 
+Create a virtual environment:
+
 ```bash
-# Create a virtual environment
 python3 -m venv venv
+```
 
-# Activate the virtual environment
+Activate the virtual environment:
+
+```bash
 source venv/bin/activate
+```
 
-# Install dependencies
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
+```
 
-# Deactivate the virtual environment when done
+Deactivate the virtual environment when done:
+
+```bash
 deactivate
 ```
 
@@ -106,14 +122,21 @@ Make sure to edit the plist file to replace `USERNAME` with your actual macOS us
 
 ### Step 5: Load the Launch Agent
 
+Set correct permissions:
+
 ```bash
-# Set correct permissions
 chmod 644 ~/Library/LaunchAgents/com.user.robofuse.plist
+```
 
-# Load the agent
+Load the agent:
+
+```bash
 launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
+```
 
-# Start the service
+Start the service:
+
+```bash
 launchctl start com.user.robofuse
 ```
 
@@ -121,13 +144,15 @@ launchctl start com.user.robofuse
 
 ### Checking Service Status
 
-To verify that robofuse is running:
+Check if service is listed:
 
 ```bash
-# Check if service is listed
 launchctl list | grep robofuse
+```
 
-# View the log output
+View the log output:
+
+```bash
 cat ~/Library/Logs/robofuse.log
 ```
 
@@ -218,10 +243,11 @@ launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
 
 ### Log Rotation
 
-For long-running instances, consider implementing log rotation:
+For long-running instances, consider implementing log rotation.
+
+Create the logrotate configuration:
 
 ```bash
-# Create logrotate configuration
 cat > ~/robofuse_logrotate.conf << EOF
 /Users/USERNAME/Library/Logs/robofuse.log {
     daily
@@ -238,12 +264,16 @@ cat > ~/robofuse_logrotate.conf << EOF
     notifempty
 }
 EOF
+```
 
-# Add to your crontab (opens editor)
+Add to your crontab (opens editor):
+
+```bash
 crontab -e
 ```
 
 Add this line to your crontab:
+
 ```
 0 0 * * * /usr/sbin/logrotate -s ~/robofuse_logrotate.status ~/robofuse_logrotate.conf
 ``` 
