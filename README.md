@@ -54,7 +54,6 @@ python3 robofuse.py
 For detailed documentation, check the [wiki](./wiki/Home.md) in this repository:
 
 - [Getting Started Guide](./wiki/Getting-Started.md) - Detailed setup instructions
-- [User Guide](./wiki/User-Guide.md) - Complete usage documentation
 - [Running in Background Mode (macOS)](./wiki/Background-Mode.md) - Run in background on macOS
 - [Running in Background Mode (Windows)](./wiki/Background-Mode-Windows.md) - Run in background on Windows
 - [Running in Background Mode (Linux)](./wiki/Background-Mode-Linux.md) - Run in background on Linux
@@ -121,7 +120,7 @@ Run in watch mode (monitors for new torrents):
 python3 robofuse.py --watch
 ```
 
-For more examples and advanced usage, see the [User Guide](./wiki/User-Guide.md).
+For more examples and command-line options, run `python3 robofuse.py --help`.
 
 ## Requirements
 

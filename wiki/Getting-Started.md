@@ -107,8 +107,8 @@ Generated 58 STRM files in ./Library
 
 Now that you have robofuse up and running, you can:
 
-- Learn about [command-line options](User-Guide.md#command-line-options) for more control
-- Set up [watch mode](User-Guide.md#watch-mode) to automatically process new torrents
+- Learn about command-line options by running `python3 robofuse.py --help`
+- Set up [watch mode](Background-Mode.md#setting-up-watch-mode) to automatically process new torrents
 - Deploy using [Docker](Docker-Deployment.md) for a containerized setup
 - Configure robofuse to [run in the background](Background-Mode.md)
 - Explore [advanced configuration options](Advanced-Configuration.md) 

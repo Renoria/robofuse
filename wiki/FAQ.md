@@ -86,6 +86,28 @@ Real-Debrid limits how many API requests you can make. Try lowering the `concurr
 ### Do I need to keep robofuse running all the time?
 Only if you're using watch mode to automatically process new torrents. Otherwise, you can run it manually as needed.
 
+### What command-line options are available?
+robofuse supports several command-line options to control its behavior:
+
+- `--watch`: Run in watch mode to continuously monitor for new torrents
+- `--verbose`: Enable verbose logging for debugging
+- `--quiet`: Suppress most output
+- `--summary`: Show only summary information, reducing output
+- `--skip-health-check`: Skip checking health of existing links
+- `--repair-torrents`: Enable automatic repair of unhealthy torrents
+- `--no-repair-torrents`: Disable automatic repair of unhealthy torrents
+- `--no-cache`: Disable using the cache
+- `--output-dir PATH`: Override the output directory specified in config.json
+- `--cache-dir PATH`: Override the cache directory specified in config.json
+- `--concurrent N`: Number of concurrent requests
+- `--general-rate-limit N`: General API rate limit in requests per minute
+- `--torrents-rate-limit N`: Torrents API rate limit in requests per minute
+- `--watch-refresh-interval N`: Refresh interval in minutes for watch mode
+- `--watch-health-interval N`: Health check interval in minutes for watch mode
+- `--help` or `-h`: Display all available options and their descriptions
+
+You can see the complete list of options by running: `python3 robofuse.py --help`
+
 ## Docker and Deployment
 
 ### Can I run robofuse in a Docker container?

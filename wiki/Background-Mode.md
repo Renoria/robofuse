@@ -81,6 +81,20 @@ Your config.json should include:
 
 The `watch_mode_enabled` setting ensures robofuse automatically monitors for new torrents. You can also pass the `--watch` flag in your launch agent, but setting it in the config file provides redundancy.
 
+## Setting Up Watch Mode
+
+Watch mode is a key feature that allows robofuse to continuously monitor for new torrents and process them automatically. In background mode, this is particularly important as it enables robofuse to run as a service without requiring manual intervention.
+
+To configure watch mode:
+
+1. Set `watch_mode_enabled` to `true` in your config.json file
+2. Adjust `watch_mode_refresh_interval` to control how frequently (in seconds) robofuse checks for new torrents
+3. Set `watch_mode_health_check_interval` to determine how often (in minutes) robofuse should verify the health of existing links
+
+For most users, the default values work well:
+- 10 seconds for refresh interval provides a good balance between responsiveness and API usage
+- 60 minutes for health check interval ensures links are refreshed before they expire
+
 ### Step 4: Create a Launch Agent
 
 Create a new file in ~/Library/LaunchAgents directory:

@@ -10,11 +10,11 @@ Welcome to the robofuse documentation! This wiki contains everything you need to
 - [Configuration Basics](Getting-Started.md#basic-configuration) - Essential configuration
 - [First Run](Getting-Started.md#first-run) - Initial setup and first usage
 
-### User Guide
-- [Basic Usage](User-Guide.md#basic-usage) - Common commands and workflows
-- [Command Line Options](User-Guide.md#command-line-options) - Available flags and options
-- [Watch Mode](User-Guide.md#watch-mode) - Continuous monitoring for new content
-- [Output Structure](User-Guide.md#output-structure) - How media files are organized
+### Usage and Commands
+- [Basic Usage](Getting-Started.md#first-run) - Common commands and workflows
+- [Command Line Options](FAQ.md#what-command-line-options-are-available) - Available flags and options
+- [Watch Mode](Background-Mode.md#setting-up-watch-mode) - Continuous monitoring for new content
+- [Output Structure](Advanced-Configuration.md#output-directory) - How media files are organized
 
 ### Deployment
 - [Running in Background Mode (macOS)](Background-Mode.md) - Run in background on macOS
@@ -24,14 +24,11 @@ Welcome to the robofuse documentation! This wiki contains everything you need to
 
 ### Advanced Topics
 - [Advanced Configuration](Advanced-Configuration.md) - Complete configuration reference
-- [Rate Limiting and Performance](Performance.md) - Optimize performance
 - [Cache System](Cache-System.md) - Understanding and configuring the cache
-- [Utility Scripts](Utility-Scripts.md) - Additional tools for managing Real-Debrid
 
 ### Help and Reference
 - [Troubleshooting](Troubleshooting.md) - Common issues and solutions
 - [FAQ](FAQ.md) - Frequently asked questions
-- [API Reference](API-Reference.md) - Internal API documentation
 
 ## About robofuse
 
