@@ -1,5 +1,5 @@
 {
-    "token": "CHOC6FVPIVFK3KBPYBCSMKS4444VG44BYIIFHRIDBQ3NIFQZJZAQ",
+    "token": "YOUR_RD_API_TOKEN",
     "output_dir": "./Library",
     "cache_dir": "./cache",
     "concurrent_requests": 32,
