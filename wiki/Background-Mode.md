@@ -95,15 +95,30 @@ tail -f robofuse.log
 
 ## Option 2: Using launchd (macOS Native Method)
 
-This is the recommended "Mac way" of creating background services that can auto-start:
+This is the recommended "Mac way" of creating background services that can auto-start with a virtual environment:
 
-### Step 1: Create a launch agent plist file
+### Step 1: Create a virtual environment
+
+```bash
+# Create a virtual environment in the robofuse directory
+cd /path/to/robofuse
+python3 -m venv venv
+
+# Activate it and install dependencies
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Deactivate when done with setup
+deactivate
+```
+
+### Step 2: Create a launch agent plist file
 
 ```bash
 mkdir -p ~/Library/LaunchAgents
 ```
 
-Create the plist file (replace `/path/to/robofuse` with your actual path):
+Create the plist file (replace `/path/to/robofuse` with your actual path and USERNAME with your macOS username):
 
 ```bash
 cat > ~/Library/LaunchAgents/com.user.robofuse.plist << EOF
@@ -115,35 +130,41 @@ cat > ~/Library/LaunchAgents/com.user.robofuse.plist << EOF
     <string>com.user.robofuse</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
-        <string>/path/to/robofuse/robofuse.py</string>
-        <string>--watch</string>
-        <string>--summary</string>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>cd /path/to/robofuse && source venv/bin/activate && python robofuse.py --watch</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/path/to/robofuse/robofuse.log</string>
+    <string>/Users/USERNAME/Library/Logs/robofuse.log</string>
     <key>StandardErrorPath</key>
-    <string>/path/to/robofuse/robofuse.error.log</string>
-    <key>WorkingDirectory</key>
-    <string>/path/to/robofuse</string>
+    <string>/Users/USERNAME/Library/Logs/robofuse_error.log</string>
 </dict>
 </plist>
 EOF
 ```
 
-Make sure to edit the plist file to replace `/path/to/robofuse` with the actual path to your robofuse directory.
+Make sure to edit the plist file to replace:
+- `/path/to/robofuse` with the actual path to your robofuse directory
+- `USERNAME` with your actual macOS username
 
-### Step 2: Load the launch agent
+### Step 3: Load the launch agent
 
 ```bash
+# Set correct permissions
+chmod 644 ~/Library/LaunchAgents/com.user.robofuse.plist
+
+# Load the agent
 launchctl load ~/Library/LaunchAgents/com.user.robofuse.plist
+
+# Start the service
+launchctl start com.user.robofuse
 ```
 
-### Step 3: Managing the service
+### Step 4: Managing the service
 
 To stop the service:
 ```bash
@@ -160,7 +181,31 @@ To check if the service is running:
 launchctl list | grep robofuse
 ```
 
-### Advantages of the launchd method:
+### Troubleshooting
+
+If robofuse isn't running correctly, check the error log:
+
+```bash
+cat ~/Library/Logs/robofuse_error.log
+```
+
+#### Common Issues
+
+1. **Missing Dependencies**: If you see errors about missing modules, ensure your virtual environment is correctly set up:
+   ```bash
+   cd /path/to/robofuse
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **LibreSSL Warnings**: You might see warnings about LibreSSL compatibility with urllib3. These are generally safe to ignore, but can be fixed by downgrading urllib3:
+   ```bash
+   source venv/bin/activate
+   pip install 'urllib3<2.0'
+   ```
+
+### Advantages of the launchd method with virtual environment:
+- Uses an isolated Python environment that won't interfere with system packages
 - Automatically restarts if it crashes
 - Starts when you log in
 - Integrates with macOS system management
